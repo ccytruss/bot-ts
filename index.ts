@@ -1,5 +1,5 @@
 import WebSocket from "ws"
-
+import type {hero,map,mob} from "./types"
 interface User {
     world: string,
     chash: string,
@@ -34,11 +34,17 @@ class socketHandler {
 
     handleMessages(data: WebSocket.Data) {
         try {
-            console.log(data);
+            const message = typeof data === 'string' ? data : data.toString('utf8');
+            const parsedMessage = JSON.parse(message);
+            if(parsedMessage?.t === "stop"){
+                console.log(parsedMessage?.alert);
+                process.exit(0)
+            }
         } catch (error) {
             console.log(error);
         }
     }
+    
     
     construct() {
         if (this.instance.ev) {
@@ -65,43 +71,48 @@ class Engine {
         this.user = user;
     }
 
+
+    async sendInitMessages(engine: WebSocket) {
+        for (let init = 1; init < 5; init++) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+            this.socketHandler.addData('t', init < 5 ? 'init' : '_');
+            this.socketHandler.addData('initlvl', init.toString());
+            this.socketHandler.addData('clientTs', (Date.now() / 1000).toString());
+            this.socketHandler.addData('mucka', Math.random().toString());
+            const initData = this.socketHandler.construct()
+            console.log("Sending:", initData);
+            engine.send(JSON.stringify(initData));
+        }
+    }
+
     connect() {
         const cookieString = Object.entries(this.user)
             .map(([key, value]) => `${key}=${value}`)
             .join('; ');
 
-        const options = {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36",
-                "Origin": `https://${this.user.world}.margonem.pl`,
-                "Referer": `https://${this.user.world}.margonem.pl`,
-                "Host": `${this.user.world}.margonem.pl`,
-                "Cookie": cookieString
-            }
-        };
-
+            const options = {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36",
+                    "Origin": `https://${this.user.world}.margonem.pl`,
+                    "Referer": `https://${this.user.world}.margonem.pl`,
+                    "Host": `${this.user.world}.margonem.pl`,
+                    "Cookie": cookieString
+                }
+            };
         const engine = new WebSocket(`wss://${this.user.world}.margonem.pl/ws-engine`, options);
-
-        engine.onopen = () => {
-            for (let init = 1; init < 5; init++) {
-                this.socketHandler.addData('t', init < 5 ? 'init' : '_');
-                this.socketHandler.addData('initlvl', init.toString());
-                this.socketHandler.addData('clientTs', (Date.now() / 1000).toString());
-                this.socketHandler.addData('mucka', Math.random().toString());
-                const initData = this.socketHandler.construct()
-                console.log(initData)
-                engine.send(JSON.stringify(initData))
-            }
-        }
 
         engine.on('message', (data: WebSocket.Data) => {
             this.socketHandler.handleMessages(data);
         });
+
+        engine.onopen = () => {
+            this.sendInitMessages(engine);
+        };
     }
 }
 
 new Engine({
-    world: "exampleWorld",
+    world: "gordion",
     chash: "exampleChash",
     hs3: "exampleHs3",
     mchar_id: 1,
