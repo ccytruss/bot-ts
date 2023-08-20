@@ -1,0 +1,35 @@
+export type hero = {
+    account: number,
+    credits: number,
+    exp: number,
+    gold: number,
+    id: number,
+    lvl: number,
+    nick: string,
+    party: number,
+    stasis: number,
+    ttl: number,
+    ttl_end: number,
+    x: number,
+    y: number,
+}
+export type map = {
+    id: number,
+    name: string,
+    pvp: number,
+    x: number,
+    y: number,
+    cl: string,
+}
+export type mob = {
+    id: number,
+    name: string,
+    lvl: number,
+    wt: number,
+    type: number,
+    grp: number,
+    x: number,
+    y: number,
+    del?: number,
+    walkover?: boolean,
+}
