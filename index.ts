@@ -1,5 +1,5 @@
 import WebSocket from "ws"
-import type {hero,map,mob} from "./types"
+import type {hero,map,mob} from "./types/types"
 interface User {
     world: string,
     chash: string,
